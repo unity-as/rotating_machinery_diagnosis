@@ -224,7 +224,7 @@
                         </div>
                     </div>
                     <div style="margin-top:8px">
-                        ${Object.keys(r.probabilities).map((k, j) => {
+                        ${['normal','inner','outer','combine','roll'].map((k, j) => {
                             const p = (r.probabilities[k] * 100).toFixed(1);
                             return `<div class="prob-bar">
                                 <span class="prob-label" style="width:60px;font-size:11px">${['正常','内圈','外圈','复合','滚动体'][j]}</span>
