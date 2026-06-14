@@ -1,0 +1,55 @@
+# ==================== 数据路径配置 ====================
+raw_data_dir: "./datas/raw_datas"
+output_dir: "./datas/ds"
+words_dir_G: "./datas/words_G"
+words_dir_LG: "./datas/words_LG"
+corpus_file_G: "./datas/corpus_G.txt"
+corpus_file_LG: "./datas/corpus_LG.txt"
+
+# ==================== 信号预处理参数 ====================
+num_workers: 4
+window_size: 800
+tau: 2
+max_segments_per_file: 2500
+random_state: 42
+
+# ==================== NDD & TM 参数 ====================
+ndd_delta: 2
+ndd_thresholds: [0.1]
+tm_s_steps: [1, 2]
+tm_thresholds: [0.05]
+tm_top_k: 10
+max_vocab: [200000, 50000]
+agg_by: 5
+
+# ==================== PV-DBOW 模型参数 ====================
+vector_size: 512
+pvdbow_epochs: 30
+pvdbow_min_count: 100
+pvdbow_down_sampling: 0.0001
+pvdbow_workers: 4
+pvdbow_learning_rate: 0.025
+
+# ==================== 分类器配置 ====================
+test_ratio: 0.2
+classifier_batch_size: 32
+classifier_epochs: 150
+classifier_lr: 0.001
+weight_decay: 0.001
+dropout_rate: 0.5
+early_stop_patience: 20
+use_augmentation: false
+noise_scale: 0.01
+drop_prob: 0.1
+run_tsne: true
+plot_curve: true
+save_best_model: "best_cls_model.pth"
+device: "cuda"
+classifier_hidden_dims: [128, 64]
+classifier_activation: "relu"
+classifier_use_bn: true
+
+# ==================== Web 服务配置 ====================
+web_host: "0.0.0.0"
+web_port: 5000
+debug_mode: false

@@ -1,0 +1,50 @@
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# 单词文件
+datas/words_G/
+datas/words_LG/
+
+# 语料文件
+datas/corpus_G.txt
+datas/corpus_LG.txt
+
+# 中间向量和模型
+datas/ds/pvdbow_G.model*
+datas/ds/pvdbow_LG.model*
+datas/ds/vec_G.npy
+datas/ds/vec_LG.npy
+datas/ds/fused_features.npy
+datas/ds/best_cls_model.pth
+
+# t-SNE 和训练曲线图
+datas/ds/*.png
+
+# 标签文件
+datas/ds/label_order.txt
+
+# 原始数据（不删除，但不上传）
+datas/raw_datas/
+datas/mat_datas/
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 日志和临时文件
+*.log
+*.tmp
+test_model*
+step1_output.txt
+SKILL.md

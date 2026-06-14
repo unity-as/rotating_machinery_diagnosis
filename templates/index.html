@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>旋转机械故障诊断系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #333; }
+        .header { background: linear-gradient(135deg, #1a73e8, #0d47a1); color: white; padding: 20px 40px; }
+        .header h1 { font-size: 24px; font-weight: 600; }
+        .header p { opacity: 0.8; margin-top: 4px; font-size: 14px; }
+        .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 20px; }
+        .card h2 { font-size: 18px; color: #1a73e8; margin-bottom: 15px; border-bottom: 2px solid #e8eaed; padding-bottom: 8px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+        .btn-primary { background: #1a73e8; color: white; }
+        .btn-primary:hover { background: #1557b0; }
+        .btn-success { background: #34a853; color: white; }
+        .btn-success:hover { background: #2d8e47; }
+        .btn-danger { background: #ea4335; color: white; }
+        .btn-danger:hover { background: #c5221f; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .signal-canvas { width: 100%; height: 200px; border: 1px solid #e8eaed; border-radius: 4px; margin: 10px 0; }
+        .sample-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 15px; }
+        .sample-item { border: 1px solid #e8eaed; border-radius: 6px; padding: 15px; cursor: pointer; transition: all 0.2s; }
+        .sample-item:hover { border-color: #1a73e8; box-shadow: 0 2px 8px rgba(26,115,232,0.2); }
+        .sample-item.selected { border-color: #1a73e8; background: #e8f0fe; }
+        .sample-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+        .badge-normal { background: #e6f4ea; color: #1e8e3e; }
+        .badge-fault { background: #fce8e6; color: #d93025; }
+        .badge-correct { background: #e6f4ea; color: #1e8e3e; border: 2px solid #1e8e3e; }
+        .badge-wrong { background: #fce8e6; color: #d93025; border: 2px solid #d93025; }
+        .result-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .result-item { text-align: center; padding: 15px; background: #f8f9fa; border-radius: 6px; }
+        .result-value { font-size: 28px; font-weight: 700; color: #1a73e8; }
+        .result-label { font-size: 13px; color: #666; margin-top: 4px; }
+        .prob-bar { display: flex; align-items: center; margin: 6px 0; }
+        .prob-label { width: 100px; font-size: 13px; text-align: right; margin-right: 10px; }
+        .prob-track { flex: 1; height: 20px; background: #e8eaed; border-radius: 10px; overflow: hidden; }
+        .prob-fill { height: 100%; border-radius: 10px; transition: width 0.5s; }
+        .prob-value { width: 50px; font-size: 13px; margin-left: 10px; }
+        .config-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+        .config-item { display: flex; flex-direction: column; }
+        .config-item label { font-size: 13px; color: #666; margin-bottom: 4px; }
+        .config-item input, .config-item select { padding: 8px; border: 1px solid #e8eaed; border-radius: 4px; font-size: 14px; }
+        .batch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 15px; margin-top: 15px; }
+        .batch-card { border: 2px solid #e8eaed; border-radius: 8px; padding: 15px; }
+        .batch-card.correct { border-color: #34a853; }
+        .batch-card.wrong { border-color: #ea4335; }
+        .batch-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .batch-result { display: flex; gap: 15px; margin-top: 10px; }
+        .batch-result-item { flex: 1; text-align: center; padding: 8px; border-radius: 4px; background: #f8f9fa; }
+        .batch-result-value { font-size: 16px; font-weight: 700; }
+        .batch-result-label { font-size: 11px; color: #666; }
+        .model-info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .model-info-item { padding: 10px; background: #f8f9fa; border-radius: 4px; }
+        .model-info-key { font-size: 12px; color: #666; }
+        .model-info-val { font-size: 14px; font-weight: 600; color: #333; margin-top: 2px; }
+        .summary-bar { display: flex; gap: 20px; align-items: center; padding: 15px; background: #f8f9fa; border-radius: 6px; margin-bottom: 15px; }
+        .summary-item { text-align: center; }
+        .summary-value { font-size: 24px; font-weight: 700; }
+        .summary-label { font-size: 12px; color: #666; }
+        .mini-signal { width: 100%; height: 60px; border: 1px solid #e8eaed; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>旋转机械故障诊断系统</h1>
+        <p>基于 Netpro2vec 图嵌入 + PV-DBOW 的振动信号智能诊断</p>
+    </div>
+
+    <div class="container">
+        <!-- 模型参数 -->
+        <div class="card">
+            <h2>模型参数</h2>
+            <div class="model-info-grid" id="modelInfo"></div>
+        </div>
+
+        <!-- 一键诊断 -->
+        <div class="card">
+            <h2>一键诊断（每类随机截取1个窗口）</h2>
+            <button class="btn btn-danger" id="batchBtn" onclick="batchDiagnose()">开始诊断</button>
+            <button class="btn btn-success" onclick="reloadModels()">重新加载模型</button>
+            <div id="batchSummary"></div>
+            <div id="batchGrid" class="batch-grid"></div>
+        </div>
+
+        <!-- 抽检 -->
+        <div class="card">
+            <h2>振动信号抽检</h2>
+            <button class="btn btn-primary" onclick="loadSamples()">随机抽取样本</button>
+            <div id="sampleGrid" class="sample-grid" style="margin-top: 15px;"></div>
+        </div>
+
+        <div class="card" id="diagnosisCard" style="display:none;">
+            <h2>诊断结果</h2>
+            <canvas id="signalCanvas" class="signal-canvas"></canvas>
+            <div class="result-panel" style="margin-top: 15px;">
+                <div class="result-item">
+                    <div class="result-value" id="predClass">-</div>
+                    <div class="result-label">诊断结果</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-value" id="predConf">-</div>
+                    <div class="result-label">置信度</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-value" id="graphInfo">-</div>
+                    <div class="result-label">原图 (节点/边)</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-value" id="lgInfo">-</div>
+                    <div class="result-label">线图 (节点/边)</div>
+                </div>
+            </div>
+            <div style="margin-top: 15px;">
+                <h3 style="font-size: 15px; margin-bottom: 10px;">各类别概率</h3>
+                <div id="probBars"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>概率分布图</h2>
+            <canvas id="probChart" height="80"></canvas>
+        </div>
+
+        <div class="card">
+            <h2>系统配置</h2>
+            <div class="config-grid" id="configForm"></div>
+            <button class="btn btn-success" style="margin-top: 15px;" onclick="saveConfig()">保存配置</button>
+        </div>
+    </div>
+
+    <script>
+        let probChart = null;
+
+        async function loadModelInfo() {
+            const res = await fetch('/api/model_info');
+            const info = await res.json();
+            const grid = document.getElementById('modelInfo');
+            const items = [
+                ['设备', info.device],
+                ['特征维度', info.feature_dim],
+                ['总样本数', info.total_samples],
+                ['窗口大小', info.config.window_size],
+                ['延迟参数 τ', info.config.tau],
+                ['嵌入维度', info.config.vector_size],
+                ['PV-DBOW 轮数', info.config.pvdbow_epochs],
+                ['PV-DBOW 学习率', info.config.pvdbow_learning_rate],
+                ['分类器隐藏层', info.config.classifier_hidden_dims],
+                ['激活函数', info.config.classifier_activation],
+                ['BatchNorm', info.config.classifier_use_bn ? '是' : '否'],
+                ['分类器轮数', info.config.classifier_epochs],
+                ['分类器学习率', info.config.classifier_lr],
+                ['Dropout', info.config.dropout_rate],
+                ['权重衰减', info.config.weight_decay],
+                ['早停耐心', info.config.early_stop_patience],
+                ['NDD delta', info.config.ndd_delta],
+                ['NDD 阈值', info.config.ndd_thresholds],
+                ['TM 步数', info.config.tm_s_steps],
+                ['TM 阈值', info.config.tm_thresholds],
+                ['TM top_k', info.config.tm_top_k],
+                ['每类窗口数', info.config.max_segments_per_file],
+                ['测试集比例', info.config.test_ratio],
+                ['类别数', info.classes.length]
+            ];
+            grid.innerHTML = items.map(([k, v]) =>
+                `<div class="model-info-item"><div class="model-info-key">${k}</div><div class="model-info-val">${v}</div></div>`
+            ).join('');
+        }
+
+        async function reloadModels() {
+            const res = await fetch('/api/reload_models', { method: 'POST' });
+            const data = await res.json();
+            if (data.error) {
+                alert('重载失败: ' + data.error);
+            } else {
+                alert('模型已重新加载');
+                loadModelInfo();
+            }
+        }
+
+        async function batchDiagnose() {
+            const btn = document.getElementById('batchBtn');
+            btn.disabled = true;
+            btn.textContent = '诊断中...';
+            document.getElementById('batchGrid').innerHTML = '<div class="loading">正在诊断，请稍候...</div>';
+            document.getElementById('batchSummary').innerHTML = '';
+
+            const res = await fetch('/api/batch_diagnose');
+            const results = await res.json();
+
+            let correct = 0;
+            const colors = ['#34a853', '#ea4335', '#fbbc04', '#4285f4', '#9334e6'];
+
+            const grid = document.getElementById('batchGrid');
+            grid.innerHTML = '';
+
+            results.forEach((r, i) => {
+                if (r.correct) correct++;
+                const card = document.createElement('div');
+                card.className = `batch-card ${r.correct ? 'correct' : 'wrong'}`;
+                card.innerHTML = `
+                    <div class="batch-header">
+                        <span class="badge ${r.correct ? 'badge-correct' : 'badge-wrong'}">${r.correct ? '正确' : '错误'}</span>
+                        <span style="font-size:12px;color:#999;">${r.file}</span>
+                    </div>
+                    <canvas class="mini-signal" id="batchSig${i}" height="60"></canvas>
+                    <div class="batch-result">
+                        <div class="batch-result-item">
+                            <div class="batch-result-value" style="color:#1a73e8">${r.label}</div>
+                            <div class="batch-result-label">预测结果</div>
+                        </div>
+                        <div class="batch-result-item">
+                            <div class="batch-result-value" style="color:#333">${r.expected_label}</div>
+                            <div class="batch-result-label">实际类型</div>
+                        </div>
+                        <div class="batch-result-item">
+                            <div class="batch-result-value" style="color:${r.correct ? '#34a853' : '#ea4335'}">${(r.confidence * 100).toFixed(1)}%</div>
+                            <div class="batch-result-label">置信度</div>
+                        </div>
+                    </div>
+                    <div style="margin-top:8px">
+                        ${Object.keys(r.probabilities).map((k, j) => {
+                            const p = (r.probabilities[k] * 100).toFixed(1);
+                            return `<div class="prob-bar">
+                                <span class="prob-label" style="width:60px;font-size:11px">${['正常','内圈','外圈','复合','滚动体'][j]}</span>
+                                <div class="prob-track" style="height:12px">
+                                    <div class="prob-fill" style="width:${p}%;background:${colors[j]}"></div>
+                                </div>
+                                <span class="prob-value" style="font-size:11px">${p}%</span>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                `;
+                grid.appendChild(card);
+                setTimeout(() => drawSignal(`batchSig${i}`, r.signal), 0);
+            });
+
+            const summary = document.getElementById('batchSummary');
+            summary.innerHTML = `
+                <div class="summary-bar">
+                    <div class="summary-item">
+                        <div class="summary-value" style="color:${correct === results.length ? '#34a853' : '#ea4335'}">${correct}/${results.length}</div>
+                        <div class="summary-label">正确数/总数</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-value" style="color:#1a73e8">${(correct / results.length * 100).toFixed(0)}%</div>
+                        <div class="summary-label">准确率</div>
+                    </div>
+                </div>
+            `;
+
+            btn.disabled = false;
+            btn.textContent = '开始诊断';
+        }
+
+        async function loadSamples() {
+            const res = await fetch('/api/random_sample');
+            const samples = await res.json();
+            const grid = document.getElementById('sampleGrid');
+            grid.innerHTML = '';
+            samples.forEach((s, i) => {
+                const div = document.createElement('div');
+                div.className = 'sample-item';
+                div.onclick = () => selectSample(i, s, div);
+                const isNormal = s.class === 'normal';
+                div.innerHTML = `
+                    <div class="sample-meta">
+                        <span class="badge ${isNormal ? 'badge-normal' : 'badge-fault'}">${s.label}</span>
+                        <span style="font-size:12px;color:#999;">${s.file}</span>
+                    </div>
+                    <canvas id="sig${i}" height="60"></canvas>
+                `;
+                grid.appendChild(div);
+                setTimeout(() => drawSignal(`sig${i}`, s.signal), 0);
+            });
+        }
+
+        function drawSignal(canvasId, signal, color='#1a73e8') {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width = canvas.offsetWidth;
+            const h = canvas.height = canvas.offsetHeight;
+            ctx.clearRect(0, 0, w, h);
+            const min = Math.min(...signal);
+            const max = Math.max(...signal);
+            const range = max - min || 1;
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            const step = w / signal.length;
+            for (let i = 0; i < signal.length; i++) {
+                const x = i * step;
+                const y = h - ((signal[i] - min) / range) * (h - 10) - 5;
+                i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+
+        async function selectSample(idx, sample, elem) {
+            document.querySelectorAll('.sample-item').forEach(el => el.classList.remove('selected'));
+            elem.classList.add('selected');
+
+            document.getElementById('diagnosisCard').style.display = 'block';
+            drawSignal('signalCanvas', sample.signal);
+
+            const res = await fetch('/api/diagnose', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({signal: sample.signal})
+            });
+            const result = await res.json();
+            if (result.error) { alert(result.error); return; }
+
+            document.getElementById('predClass').textContent = result.label;
+            document.getElementById('predConf').textContent = (result.confidence * 100).toFixed(1) + '%';
+            document.getElementById('graphInfo').textContent = `${result.graph_nodes}/${result.graph_edges}`;
+            document.getElementById('lgInfo').textContent = `${result.line_graph_nodes}/${result.line_graph_edges}`;
+
+            const probBars = document.getElementById('probBars');
+            probBars.innerHTML = '';
+            const colors = ['#34a853', '#ea4335', '#fbbc04', '#4285f4', '#9334e6'];
+            const labels = ['正常', '内圈', '外圈', '复合', '滚动体'];
+            const keys = ['normal', 'inner', 'outer', 'combine', 'roll'];
+            keys.forEach((k, i) => {
+                const p = result.probabilities[k] * 100;
+                probBars.innerHTML += `
+                    <div class="prob-bar">
+                        <span class="prob-label">${labels[i]}</span>
+                        <div class="prob-track">
+                            <div class="prob-fill" style="width:${p}%;background:${colors[i]}"></div>
+                        </div>
+                        <span class="prob-value">${p.toFixed(1)}%</span>
+                    </div>
+                `;
+            });
+            updateProbChart(result.probabilities);
+        }
+
+        function updateProbChart(probs) {
+            const ctx = document.getElementById('probChart').getContext('2d');
+            const labels = ['正常', '内圈', '外圈', '复合', '滚动体'];
+            const keys = ['normal', 'inner', 'outer', 'combine', 'roll'];
+            const values = keys.map(k => (probs[k] * 100).toFixed(1));
+            const colors = ['#34a853', '#ea4335', '#fbbc04', '#4285f4', '#9334e6'];
+            if (probChart) probChart.destroy();
+            probChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets: [{ data: values, backgroundColor: colors, borderRadius: 4 }] },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } }
+                }
+            });
+        }
+
+        async function loadConfig() {
+            const res = await fetch('/api/config');
+            const config = await res.json();
+            const form = document.getElementById('configForm');
+            const keys = ['window_size', 'tau', 'max_segments_per_file', 'vector_size',
+                         'pvdbow_epochs', 'classifier_epochs', 'classifier_lr', 'dropout_rate'];
+            form.innerHTML = '';
+            keys.forEach(k => {
+                form.innerHTML += `<div class="config-item"><label>${k}</label><input type="text" id="cfg_${k}" value="${config[k] || ''}"></div>`;
+            });
+        }
+
+        async function saveConfig() {
+            const keys = ['window_size', 'tau', 'max_segments_per_file', 'vector_size',
+                         'pvdbow_epochs', 'classifier_epochs', 'classifier_lr', 'dropout_rate'];
+            const updates = {};
+            keys.forEach(k => {
+                const v = document.getElementById(`cfg_${k}`).value;
+                updates[k] = isNaN(v) ? v : Number(v);
+            });
+            await fetch('/api/config', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(updates)
+            });
+            alert('配置已保存');
+        }
+
+        loadModelInfo();
+        loadConfig();
+    </script>
+</body>
+</html>
