@@ -1,6 +1,28 @@
 import numpy as np
 import os
+import time
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
+from gensim.models.callbacks import CallbackAny2Vec
+
+
+class EpochProgressCallback(CallbackAny2Vec):
+    def __init__(self, model_name):
+        self.model_name = model_name
+        self.start_time = None
+        self.epoch_count = 0
+
+    def on_train_begin(self, logs=None):
+        self.start_time = time.time()
+        print(f"开始训练 {self.model_name} ...")
+
+    def on_epoch_end(self, model, logs=None):
+        self.epoch_count += 1
+        elapsed = time.time() - self.start_time
+        print(f"  {self.model_name} Epoch {self.epoch_count}/30, 已用时 {elapsed:.0f}s")
+
+    def on_train_end(self, logs=None):
+        elapsed = time.time() - self.start_time
+        print(f"  {self.model_name} 训练完成, 总耗时 {elapsed:.0f}s")
 
 
 def build_tagged_documents(corpus_file):
@@ -36,13 +58,14 @@ def train_pvdbow(corpus_file, output_model_path, cfg):
         workers=workers,
         epochs=epochs,
         alpha=learning_rate,
-        seed=42
+        seed=42,
+        callbacks=[EpochProgressCallback(output_model_path.split('/')[-1])]
     )
 
     model.save(output_model_path)
     print(f"模型已保存: {output_model_path}")
 
-    vectors = np.array([model.dv[f'g_{i}'] for i in range(len(documents))])
+    vectors = np.array([model.infer_vector(doc.words, epochs=30) for doc in documents])
     return vectors
 
 
