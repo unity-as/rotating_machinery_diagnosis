@@ -10,14 +10,14 @@ corpus_file_LG: "./datas/corpus_LG.txt"
 num_workers: 4
 window_size: 800
 tau: 2
-max_segments_per_file: 2500
+max_segments_per_file: 2000
 random_state: 42
 
 # ==================== NDD & TM 参数 ====================
-ndd_delta: 2
-ndd_thresholds: [0.1]
+ndd_delta: 1
+ndd_thresholds: [0.08]
 tm_s_steps: [1, 2]
-tm_thresholds: [0.05]
+tm_thresholds: [0.07]
 tm_top_k: 10
 max_vocab: [200000, 50000]
 agg_by: 5
@@ -25,7 +25,7 @@ agg_by: 5
 # ==================== PV-DBOW 模型参数 ====================
 vector_size: 512
 pvdbow_epochs: 30
-pvdbow_min_count: 100
+pvdbow_min_count: 50
 pvdbow_down_sampling: 0.0001
 pvdbow_workers: 4
 pvdbow_learning_rate: 0.025

@@ -187,3 +187,10 @@ rotating_machinery_diagnosis/
 - 融合向量路径: …
 - 分类器模型路径: …
 - 最终性能: accuracy=…, f1=…
+
+## 测试脚本：
+compare_outer_roll.py 关于outer和roll重合度高，专门比较
+show_words_detail.py 展示单词的统计信息
+check_train_test_acc.py 验证分类器在数据集内的准确率
+debug_graph_features.py 生成基本图特征的tsne图
+verify_accuracy.py 检查分类器的全集准确率

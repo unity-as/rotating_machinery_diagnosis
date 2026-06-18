@@ -3,6 +3,9 @@
 venv/
 env/
 
+# 调试脚本
+scripts/debug/
+
 # 单词文件
 datas/words_G/
 datas/words_LG/
@@ -47,4 +50,4 @@ Thumbs.db
 *.tmp
 test_model*
 step1_output.txt
-SKILL.md
+docs/
